@@ -1,30 +1,33 @@
 import socket
+import threading
 
-HEADER = 64
-PORT = 5050
-FORMAT = 'utf-8'
-DISCONNECT_MESSAGE = "!DISCONNECT"
-SERVER = socket.gethostbyname(socket.gethostname())
-ADDR = (SERVER, PORT)
-
+username = input("Choose your username: ")
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(ADDR)
+client.connect(('127.0.0.1', 55555))
 
 
-def send(msg):
-    message = msg.encode(FORMAT)
-    msg_length = len(message)
-    send_length = str(msg_length).encode(FORMAT)
-    send_length += b' ' * (HEADER - len(send_length))
-    client.send(send_length)
-    client.send(message)
-    print(client.recv(2048).decode(FORMAT))
+def receive():
+    while True:
+        try:
+            message = client.recv(1024).decode('utf-8')
+            if message == 'username':
+                client.send(username.encode('utf-8'))
+            else:
+                print(message)
+        except:
+            print("An error occured!")
+            client.close()
+            break
 
 
-send("Hello World!")
-input()
-send("Hello Everyone!")
-input()
-send("Hello Tim!")
+def send():
+    while True:
+        message = '{}: {}'.format(username, input(''))
+        client.send(message.encode('utf-8'))
 
-send(DISCONNECT_MESSAGE)
+
+receive_thread = threading.Thread(target=receive)
+receive_thread.start()
+
+send_thread = threading.Thread(target=send)
+send_thread.start()
